@@ -1161,8 +1161,27 @@ class SpecialCollection extends SpecialPage {
 		$collectionId = $request->getVal( 'collection_id' );
 		$writer = $request->getVal( 'writer' );
 		$return_to = $request->getVal( 'return_to', '' );
+		
+		// error_log('Collection state: ' . $result->get('state'));
+		// wfDebug( 'Collection state: ' . $result->get('state') );
 
 		$result = CollectionRenderingAPI::instance( $writer )->getRenderStatus( $collectionId );
+		// $this->getOutput()->addHTML(
+		// 	'<div style="color:red">DEBUG: Collection state: ' . htmlspecialchars( is_object($result) ? (is_array($result->get('state')) ? json_encode($result->get('state')) : $result->get('state')) : var_export($result, true) ) . '</div>'
+		// );
+		$this->getOutput()->addHTML(
+			'<div style="color:red">DEBUG: Collection status: ' . htmlspecialchars( is_object($result) ? (is_array($result->get('status')) ? json_encode($result->get('status')) : $result->get('status')) : var_export($result, true) ) . '</div>'
+		);
+		
+		$statusArr = $result->get('status');
+		$status = is_array($statusArr) && isset($statusArr['status']) ? $statusArr['status'] : 'progress';
+		// if (str_starts_with($status, "data fetched. waiting for render")) {
+		// 	$status = 'progress';
+		// }
+		$this->getOutput()->addHTML(
+			'<div style="color:red">DEBUG: status status: ' . htmlspecialchars( is_object($status)) . '</div>'
+		);
+		
 		if ( !$this->handleResult( $result ) ) {
 			return; // FIXME?
 		}
@@ -1171,8 +1190,10 @@ class SpecialCollection extends SpecialPage {
 			. '&writer=' . urlencode( $writer )
 			. '&return_to=' . urlencode( $return_to );
 
-		switch ( $result->get( 'state' ) ) {
+		switch ( $status ) {
 			case 'pending':
+			case 'fetching':
+			case 'data fetched. waiting for render process..':
 			case 'progress':
 				$out->addHeadItem(
 					'refresh-nojs',
@@ -1214,14 +1235,14 @@ class SpecialCollection extends SpecialPage {
 
 			case 'finished':
 				$out->setPageTitle( $this->msg( 'coll-rendering_finished_title' ) );
+				
+				$url = $statusArr['url'];
 
 				$template = new CollectionFinishedTemplate();
 				$template->set(
 					'download_url',
-					wfExpandUrl(
-						SkinTemplate::makeSpecialUrl( 'Book', 'bookcmd=download&' . $query ),
-						PROTO_CURRENT
-					)
+					wfExpandUrl( $url, PROTO_CURRENT)
+					
 				);
 				$template->set( 'is_cached', $request->getVal( 'is_cached' ) );
 				$template->set( 'writer', $request->getVal( 'writer' ) );
@@ -1250,7 +1271,7 @@ class SpecialCollection extends SpecialPage {
 
 			default:
 				$stats->increment( 'collection.renderingpage.unknown' );
-				throw new Exception( __METHOD__ . "(): unknown state '{$result->get( 'state' )}'" );
+				throw new Exception( __METHOD__ . "(): unknown state '{$status}'" );
 		}
 	}
 

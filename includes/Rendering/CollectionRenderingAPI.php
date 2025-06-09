@@ -51,6 +51,7 @@ abstract class CollectionRenderingAPI {
 		global $wgScriptPath;
 
 		return wfExpandUrl( $wgScriptPath ?: '/', PROTO_CANONICAL );
+		// return wfExpandUrlDocker( $wgScriptPath ?: '/', PROTO_CANONICAL );
 	}
 
 	/**
@@ -101,6 +102,7 @@ abstract class CollectionRenderingAPI {
 		return $this->makeRequest( 'zip_post',
 			[
 				'metabook' => $this->buildJsonCollection( $collection ),
+				// 'base_url' => wfExpandUrlDocker($this->getBaseUrl()),
 				'base_url' => $this->getBaseUrl(),
 				'script_extension' => '.php',
 				'pod_api_url' => $url,
@@ -222,6 +224,7 @@ abstract class CollectionRenderingAPI {
 		$result['wikis'] = [
 			[
 				'type' => 'wikiconf',
+				// 'baseurl' => wfExpandUrlDocker($this->getBaseUrl()),
 				'baseurl' => $this->getBaseUrl(),
 				'script_extension' => '.php',
 				'format' => 'nuwiki',
