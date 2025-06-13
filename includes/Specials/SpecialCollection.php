@@ -1115,6 +1115,10 @@ class SpecialCollection extends SpecialPage {
 		$response = $api->render( $collection );
 
 		if ( !$this->handleResult( $response ) ) {
+
+		$this->getOutput()->addHTML(
+			'<div style="color:red">DEBUG: Collection result: ' . htmlspecialchars( is_object($response) ? json_encode($response) : var_export($response, true) ) . '</div>'
+		);
 			return;
 		}
 
@@ -1170,14 +1174,18 @@ class SpecialCollection extends SpecialPage {
 		// 	'<div style="color:red">DEBUG: Collection state: ' . htmlspecialchars( is_object($result) ? (is_array($result->get('state')) ? json_encode($result->get('state')) : $result->get('state')) : var_export($result, true) ) . '</div>'
 		// );
 		$this->getOutput()->addHTML(
+			'<div style="color:red">DEBUG: Collection result: ' . htmlspecialchars( is_object($result) ? json_encode($result) : var_export($result, true) ) . '</div>'
+		);
+
+		$this->getOutput()->addHTML(
 			'<div style="color:red">DEBUG: Collection status: ' . htmlspecialchars( is_object($result) ? (is_array($result->get('status')) ? json_encode($result->get('status')) : $result->get('status')) : var_export($result, true) ) . '</div>'
 		);
 		
 		$statusArr = $result->get('status');
 		$status = is_array($statusArr) && isset($statusArr['status']) ? $statusArr['status'] : 'progress';
-		// if (str_starts_with($status, "data fetched. waiting for render")) {
-		// 	$status = 'progress';
-		// }
+		if (str_starts_with($status, "data fetched. waiting for render")) {
+			$status = 'progress';
+		}
 		$this->getOutput()->addHTML(
 			'<div style="color:red">DEBUG: status status: ' . htmlspecialchars( is_object($status)) . '</div>'
 		);
@@ -1190,9 +1198,12 @@ class SpecialCollection extends SpecialPage {
 			. '&writer=' . urlencode( $writer )
 			. '&return_to=' . urlencode( $return_to );
 
-		switch ( $status ) {
+			// switch ( $status ) {
+		switch ( $result->get('state') ) {
 			case 'pending':
 			case 'fetching':
+			case 'rendering':
+			case 'laying out':
 			case 'data fetched. waiting for render process..':
 			case 'progress':
 				$out->addHeadItem(
@@ -1236,7 +1247,8 @@ class SpecialCollection extends SpecialPage {
 			case 'finished':
 				$out->setPageTitle( $this->msg( 'coll-rendering_finished_title' ) );
 				
-				$url = $statusArr['url'];
+				//$url = $statusArr['url'];
+				$url = $result->get( 'download_url' );
 
 				$template = new CollectionFinishedTemplate();
 				$template->set(
