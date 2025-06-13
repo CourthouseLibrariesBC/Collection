@@ -1173,22 +1173,22 @@ class SpecialCollection extends SpecialPage {
 		// $this->getOutput()->addHTML(
 		// 	'<div style="color:red">DEBUG: Collection state: ' . htmlspecialchars( is_object($result) ? (is_array($result->get('state')) ? json_encode($result->get('state')) : $result->get('state')) : var_export($result, true) ) . '</div>'
 		// );
-		$this->getOutput()->addHTML(
-			'<div style="color:red">DEBUG: Collection result: ' . htmlspecialchars( is_object($result) ? json_encode($result) : var_export($result, true) ) . '</div>'
-		);
+		// $this->getOutput()->addHTML(
+		// 	'<div style="color:red">DEBUG: Collection result: ' . htmlspecialchars( is_object($result) ? json_encode($result) : var_export($result, true) ) . '</div>'
+		// );
 
-		$this->getOutput()->addHTML(
-			'<div style="color:red">DEBUG: Collection status: ' . htmlspecialchars( is_object($result) ? (is_array($result->get('status')) ? json_encode($result->get('status')) : $result->get('status')) : var_export($result, true) ) . '</div>'
-		);
+		// $this->getOutput()->addHTML(
+		// 	'<div style="color:red">DEBUG: Collection status: ' . htmlspecialchars( is_object($result) ? (is_array($result->get('status')) ? json_encode($result->get('status')) : $result->get('status')) : var_export($result, true) ) . '</div>'
+		// );
 		
 		$statusArr = $result->get('status');
 		$status = is_array($statusArr) && isset($statusArr['status']) ? $statusArr['status'] : 'progress';
 		if (str_starts_with($status, "data fetched. waiting for render")) {
 			$status = 'progress';
 		}
-		$this->getOutput()->addHTML(
-			'<div style="color:red">DEBUG: status status: ' . htmlspecialchars( is_object($status)) . '</div>'
-		);
+		// $this->getOutput()->addHTML(
+		// 	'<div style="color:red">DEBUG: status status: ' . htmlspecialchars( is_object($status)) . '</div>'
+		// );
 		
 		if ( !$this->handleResult( $result ) ) {
 			return; // FIXME?
