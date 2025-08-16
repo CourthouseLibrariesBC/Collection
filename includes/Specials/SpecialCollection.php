@@ -271,7 +271,30 @@ class SpecialCollection extends SpecialPage {
 					$request->getVal( 'writer', '' )
 				);
 				return;
+			
+			case 'render_article':
+				$title = Title::newFromText( $request->getVal( 'arttitle', '' ) );
+				if ( !$title ) {
+					return;
+				}
+				$oldid = $request->getInt( 'oldid', 0 );
+				$collection = $this->makeCollection( $title, $oldid );
+				if ( $collection ) {
+					$this->renderCollection( $collection, $title, $request->getVal( 'writer', 'rl' ) );
+				}
+				return;
 
+			case 'render_collection':
+				$title = Title::newFromText( $request->getVal( 'colltitle', '' ) );
+				if ( !$title ) {
+					return;
+				}
+				$collection = $this->loadCollection( $title );
+				if ( $collection ) {
+					$this->renderCollection( $collection, $title, $request->getVal( 'writer', 'rl' ) );
+				}
+				return;
+				
 			case 'forcerender':
 				$this->forceRenderCollection();
 				return;
@@ -1187,13 +1210,12 @@ class SpecialCollection extends SpecialPage {
 			case 'finished':
 				$out->setPageTitleMsg( $this->msg( 'coll-rendering_finished_title' ) );
 
+				$url = $result->get( 'download_url' );
+
 				$template = new CollectionFinishedTemplate();
 				$template->set(
 					'download_url',
-					wfExpandUrl(
-						SkinComponentUtils::makeSpecialUrl( 'Book', 'bookcmd=download&' . $query ),
-						PROTO_CURRENT
-					)
+					wfExpandUrl($url, PROTO_CURRENT)
 				);
 				$template->set( 'is_cached', $request->getVal( 'is_cached' ) );
 				$template->set( 'writer', $request->getVal( 'writer' ) );
