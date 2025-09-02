@@ -33,7 +33,8 @@ class ApiSetSorting extends ApiBase {
 	 * execute the API request
 	 */
 	public function execute() {
-		[ 'items' => $items ] = $this->extractRequestParams();
+		[ 'items' => $itemsString ] = $this->extractRequestParams();
+		$items = array_map('intval', explode('|', $itemsString));
 		SpecialCollection::setSorting( $items );
 		$this->getCollectionItemListAfterAction();
 	}
@@ -42,8 +43,7 @@ class ApiSetSorting extends ApiBase {
 	public function getAllowedParams() {
 		return [
 			'items' => [
-				ParamValidator::PARAM_TYPE => 'integer',
-				ParamValidator::PARAM_ISMULTI => true,
+				ParamValidator::PARAM_TYPE => 'string',
 				ParamValidator::PARAM_REQUIRED => true
 			]
 		];
