@@ -177,6 +177,8 @@ abstract class CollectionRenderingAPI {
 	 * @return string
 	 */
 	protected function buildJsonCollection( array $collection ) {
+		error_log( 'Collection: buildJsonCollection called with ' . FormatJson::encode( $collection ) );
+
 		$result = [
 			'type' => 'collection',
 			'licenses' => $this->getLicenseInfos()
@@ -262,6 +264,8 @@ abstract class CollectionRenderingAPI {
 			}
 		}
 
-		return FormatJson::encode( $result );
+		$json = FormatJson::encode( $result );
+		error_log(f"buildJsonCollection returning {json_encode($json)}\n");
+		return $json;
 	}
 }
