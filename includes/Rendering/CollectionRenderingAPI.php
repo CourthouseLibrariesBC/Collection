@@ -265,7 +265,7 @@ abstract class CollectionRenderingAPI {
 		}
 
 		$json = FormatJson::encode( $result );
-		error_log(f"buildJsonCollection returning {json_encode($json)}\n");
+		error_log( 'Collection: buildJsonCollection returning ' . $json );
 		return $json;
 	}
 }
