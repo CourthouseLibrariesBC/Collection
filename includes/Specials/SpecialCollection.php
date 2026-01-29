@@ -1237,6 +1237,17 @@ class SpecialCollection extends SpecialPage {
 					$status = '';
 				}
 
+				// Add gtag tracking for PDF render failure
+				$out->addInlineScript(
+					"if (typeof gtag === 'function') {" .
+					"gtag('event', 'pdf_render_failure', {" .
+					"'event_category': 'collection'," .
+					"'event_label': " . Html::encodeJsVar( $statusText ?: 'unknown' ) . "," .
+					"'writer': " . Html::encodeJsVar( $writer ) .
+					"});" .
+					"}"
+				);
+
 				$template = new CollectionFailedTemplate();
 				$template->set( 'status', $status );
 				$template->set( 'query', $query );

@@ -35,6 +35,16 @@ class CollectionFailedTemplate extends QuickTemplate {
 		}
 		?>
 
+		<script>
+			// Track PDF render failure with gtag
+			if (typeof gtag === 'function') {
+				gtag('event', 'pdf_render_failure_template', {
+					'event_category': 'collection',
+					'event_label': <?php echo json_encode( $this->data['status'] ?: 'unknown' ); ?>
+				});
+			}
+		</script>
+
 		<?php
 	}
 }
