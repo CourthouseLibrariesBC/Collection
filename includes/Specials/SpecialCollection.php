@@ -22,8 +22,9 @@
 
 namespace MediaWiki\Extension\Collection\Specials;
 
-use MediaWiki\Api\ApiMain;
+use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Config\Config;
+use MediaWiki\Content\WikitextContent;
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Collection\MessageBoxHelper;
 use MediaWiki\Extension\Collection\Rendering\CollectionAPIResult;
@@ -38,7 +39,7 @@ use MediaWiki\Extension\Collection\Templates\CollectionRenderingTemplate;
 use MediaWiki\Extension\Collection\Templates\CollectionSaveOverwriteTemplate;
 use MediaWiki\Html\Html;
 use MediaWiki\MediaWikiServices;
-use MediaWiki\Request\DerivativeRequest;
+use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Skin\SkinComponentUtils;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
@@ -392,7 +393,21 @@ class SpecialCollection extends SpecialPage {
 			return;
 		}
 
-		if ( $this->saveCollection( $title, $request->getBool( 'overwrite' ) ) ) {
+		try {
+			$saved = $this->saveCollection( $title, $request->getBool( 'overwrite' ) );
+		} catch ( \RuntimeException $e ) {
+			wfDebugLog( 'Collection', __METHOD__ . ': saveCollection failed for '
+				. $title->getPrefixedText() . ': ' . $e->getMessage() );
+			$this->setHeaders();
+			$out->setPageTitleMsg( $this->msg( 'coll-save_collection' ) );
+			MessageBoxHelper::addModuleStyles( $out );
+			$out->addHTML( Html::errorBox(
+				$this->msg( 'coll-save_collection_failed' )->escaped()
+			) );
+			$out->returnToMain( false, SkinComponentUtils::makeSpecialUrl( 'Book' ) );
+			return;
+		}
+		if ( $saved ) {
 			$out->redirect( $title->getFullURL() );
 		} else {
 			$this->renderSaveOverwritePage(
@@ -1074,18 +1089,29 @@ class SpecialCollection extends SpecialPage {
 			}
 		}
 
-		$req = new DerivativeRequest(
-			$this->getRequest(),
-			[
-				'action' => 'edit',
-				'title' => $title->getPrefixedText(),
-				'text' => $articleText,
-				'token' => $this->getUser()->getEditToken(),
-			],
-			true
+		// Use PageUpdater (direct programmatic save) rather than the internal API.
+		// The API approach silently swallowed errors: ApiMain catches ApiUsageException
+		// into its response object, so save failures — including CAPTCHA blocks — were
+		// never surfaced. saveCollection always returned true and the user was redirected
+		// to a page that was never actually created.
+		$services = MediaWikiServices::getInstance();
+		$wikiPage = $services->getWikiPageFactory()->newFromTitle( $title );
+		$updater = $wikiPage->newPageUpdater( $this->getUser() );
+		$updater->setContent(
+			SlotRecord::MAIN,
+			new WikitextContent( $articleText )
 		);
-		$api = new ApiMain( $req, true );
-		$api->execute();
+		$comment = CommentStoreComment::newUnsavedComment(
+			$this->msg( 'coll-book_creator' )->inContentLanguage()->text()
+		);
+		$updater->saveRevision( $comment );
+		$saveStatus = $updater->getStatus();
+		if ( !$saveStatus || !$saveStatus->isOK() ) {
+			$errorMsg = $saveStatus
+				? $saveStatus->getMessage()->text()
+				: 'unknown error';
+			throw new \RuntimeException( $errorMsg );
+		}
 		return true;
 	}
 
